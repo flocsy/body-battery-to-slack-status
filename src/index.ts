@@ -124,9 +124,11 @@ class Crawler {
   private browser?: puppeteer1.Browser;
   private page?: puppeteer1.Page;
   loggedIn: boolean;
+  private garminConnectVersion: string;
   constructor(authInfo: AuthInfo) {
     this.authInfo = authInfo;
     this.loggedIn = false;
+    this.garminConnectVersion = "4.44.3.0";
   }
   private async getPage(): Promise<puppeteer1.Page> {
     if (!this.page) {
@@ -154,6 +156,10 @@ class Crawler {
     await frame.click('#login-btn-signin');
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
     this.loggedIn = true;
+    var garminConnectVersion = await page.$eval("#garmin-connect-version", el => el.textContent) || null;
+    if (garminConnectVersion != null) {
+      this.garminConnectVersion = garminConnectVersion;
+    }
   }
   async getLatestValues(): Promise<Values> {
     const today = new Date().toISOString().substr(0, 10);
@@ -162,7 +168,7 @@ class Crawler {
   async getLatestValuesReal(today: string, tryYesterday: boolean): Promise<Values> {
     const page = await this.getPage();
     const referer = `https://connect.garmin.com/modern/daily-summary/${today}`;
-    page.setExtraHTTPHeaders({ "x-app-ver": "4.44.3.0", "referer": referer, "accept": "application/json, text/plain, */*", "nk": "NT",
+    page.setExtraHTTPHeaders({ "x-app-ver": this.garminConnectVersion, "referer": referer, "accept": "application/json, text/plain, */*", "nk": "NT",
       "sec-ch-ua": "\";Not\\A\"Brand\";v=\"99\", \"Chromium\";v=\"88\"",
       "sec-ch-ua-mobile": "?0",
       "sec-fetch-dest": "empty",
